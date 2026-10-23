@@ -9,5 +9,17 @@ bridge.Hello.capabilities           max_count:12 max_size:16
 bridge.Config.layout                max_size:16
 bridge.Config.available_layouts     max_count:8 max_size:16
 bridge.Status.layout                max_size:16
+bridge.DeviceInfo.name              max_size:32
+bridge.DeviceInfo.model             max_size:32
+bridge.DeviceInfo.chip              max_size:32
+bridge.DeviceInfo.reset_reason      max_size:16
+bridge.DeviceInfo.apps              max_count:8
+bridge.App.id                       max_size:16
+bridge.App.name                     max_size:16
+bridge.SecurityKey.status           max_size:32
+bridge.Security.flash_encryption    max_size:12
+bridge.Security.key_storage         max_size:12
+bridge.Security.signer              max_size:32
+bridge.Security.download_mode       max_size:12
 bridge.Request.msg                  anonymous_oneof:true
 bridge.Event.msg                    anonymous_oneof:true

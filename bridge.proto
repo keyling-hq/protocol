@@ -43,6 +43,7 @@ message Request {
         Ping ping = 30;
         GetConfig get_config = 31;
         SetConfig set_config = 32;
+        GetDeviceInfo get_device_info = 33;
 
         OtaBegin ota_begin = 40;
         OtaData ota_data = 41;
@@ -90,6 +91,9 @@ message SetConfig {
 
 message Ping {}
 
+// Replied to with a DeviceInfo event.
+message GetDeviceInfo {}
+
 // Firmware update: OtaBegin, then OtaData in order from offset 0, then OtaEnd. While an update
 // is running, input requests fail with RESULT_FAILED. An update is abandoned if the session ends,
 // on a CTRL abort, or with OtaAbort.
@@ -127,6 +131,7 @@ message Event {
         Status status = 10;
 
         Config config = 30;
+        DeviceInfo device_info = 31;
     }
 }
 
@@ -136,7 +141,7 @@ message Hello {
     uint32 max_frame = 2;               // largest CMD frame payload the dongle accepts
     string firmware_version = 3;
     // Request families this firmware handles, e.g. "text", "strokes", "key_combo", "consumer",
-    // "keyboard_report", "config", "ota".
+    // "keyboard_report", "config", "ota", "device_info".
     repeated string capabilities = 4;
 }
 
@@ -162,4 +167,45 @@ message Status {
     bool typing = 1;
     bool usb_mounted = 2;
     string layout = 3;
+}
+
+// Every field may be absent: firmware fills in what it knows, and adds fields over time.
+message DeviceInfo {
+    optional string name = 1;           // Bluetooth device name
+    optional string model = 2;          // board, e.g. "LilyGo T-Dongle-S3"
+    optional string chip = 3;           // e.g. "ESP32-S3 rev 0.2"
+    optional uint32 flash_size = 4;     // bytes
+    optional uint32 uptime_s = 5;
+    // Why the dongle last restarted: "power_on", "software" (including updates), "panic",
+    // "watchdog", "brownout", "other".
+    optional string reset_reason = 6;
+    optional uint32 free_heap = 7;      // bytes
+    optional uint32 min_free_heap = 8;  // lowest free heap since boot, bytes
+    repeated App apps = 9;              // on-device apps, in launcher order
+    optional SecurityKey security_key = 10;
+    optional sint32 tx_power_dbm = 11;  // Bluetooth transmit power
+    optional Security security = 12;
+}
+
+message App {
+    string id = 1;      // stable, e.g. "jiggler"
+    string name = 2;    // as shown on the dongle
+}
+
+message SecurityKey {
+    string status = 1;  // "ok" while the FIDO2 security key runs, otherwise why it doesn't
+}
+
+// The device's protection, as reported by the running firmware. Informational only: modified
+// firmware can report anything, so this cannot prove that the firmware is official.
+message Security {
+    optional bool secure_boot = 1;          // the chip only boots signed code
+    optional string flash_encryption = 2;   // "off", "development" or "release"
+    optional string key_storage = 3;        // where the root key lives: "development" (flash) or "efuse"
+    optional bool signed_updates = 4;       // firmware updates must carry a valid signature
+    // SHA-256 of the public key that signed the running firmware; absent if it is unsigned.
+    // With secure_boot, the signature was checked at boot.
+    optional bytes signer = 5;
+    optional bool jtag_disabled = 6;        // permanently
+    optional string download_mode = 7;      // USB/UART flashing: "normal", "secure" or "disabled"
 }
