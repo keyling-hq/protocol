@@ -21,5 +21,6 @@ bridge.Security.flash_encryption    max_size:12
 bridge.Security.key_storage         max_size:12
 bridge.Security.signer              max_size:32
 bridge.Security.download_mode       max_size:12
+bridge.Logs.data                    max_size:900
 bridge.Request.msg                  anonymous_oneof:true
 bridge.Event.msg                    anonymous_oneof:true

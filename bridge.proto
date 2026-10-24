@@ -44,6 +44,7 @@ message Request {
         GetConfig get_config = 31;
         SetConfig set_config = 32;
         GetDeviceInfo get_device_info = 33;
+        GetLogs get_logs = 34;
 
         OtaBegin ota_begin = 40;
         OtaData ota_data = 41;
@@ -94,6 +95,13 @@ message Ping {}
 // Replied to with a DeviceInfo event.
 message GetDeviceInfo {}
 
+// The dongle keeps its most recent log output in RAM. Positions count the bytes logged since
+// boot; replied to with a Logs event holding the next chunk from `since` on. To read everything,
+// start at 0 and repeat with Logs.next until it equals Logs.end.
+message GetLogs {
+    uint32 since = 1;
+}
+
 // Firmware update: OtaBegin, then OtaData in order from offset 0, then OtaEnd. While an update
 // is running, input requests fail with RESULT_FAILED. An update is abandoned if the session ends,
 // on a CTRL abort, or with OtaAbort.
@@ -132,6 +140,7 @@ message Event {
 
         Config config = 30;
         DeviceInfo device_info = 31;
+        Logs logs = 32;
     }
 }
 
@@ -141,7 +150,7 @@ message Hello {
     uint32 max_frame = 2;               // largest CMD frame payload the dongle accepts
     string firmware_version = 3;
     // Request families this firmware handles, e.g. "text", "strokes", "key_combo", "consumer",
-    // "keyboard_report", "config", "ota", "device_info".
+    // "keyboard_report", "config", "ota", "device_info", "logs".
     repeated string capabilities = 4;
 }
 
@@ -208,4 +217,12 @@ message Security {
     optional bytes signer = 5;
     optional bool jtag_disabled = 6;        // permanently
     optional string download_mode = 7;      // USB/UART flashing: "normal", "secure" or "disabled"
+}
+
+message Logs {
+    // Position of data's first byte. Greater than GetLogs.since when older output was overwritten.
+    uint32 start = 1;
+    bytes data = 2;         // UTF-8 log text, may end inside a line
+    uint32 next = 3;        // position after data: the `since` for the following request
+    uint32 end = 4;         // position after the newest byte logged so far
 }
