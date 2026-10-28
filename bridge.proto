@@ -45,6 +45,10 @@ message Request {
         SetConfig set_config = 32;
         GetDeviceInfo get_device_info = 33;
         GetLogs get_logs = 34;
+        GetProfiles get_profiles = 35;
+        SelectProfile select_profile = 36;
+        ProfileSecret profile_secret = 37;
+        ResetProfile reset_profile = 38;
 
         OtaBegin ota_begin = 40;
         OtaData ota_data = 41;
@@ -102,6 +106,36 @@ message GetLogs {
     uint32 since = 1;
 }
 
+// Security key profiles. Each profile has its own FIDO credentials and OpenPGP card. The protected
+// profile's are encrypted with a key that also depends on a 32-byte secret the phone generates and
+// keeps; the dongle holds the secret in RAM only, so it is needed again after every power-up. While
+// the active profile is protected and its secret hasn't arrived, the OpenPGP card is absent and
+// FIDO requests fail.
+//
+// Replied to with a Profiles event.
+message GetProfiles {}
+
+// Replied to with a Profiles event. make_default also makes it the profile used after power-up.
+message SelectProfile {
+    Profile profile = 1;
+    bool make_default = 2;
+}
+
+// Opens the protected profile; in state PROTECTED_NEW, sets it up with this secret. The Ack is
+// RESULT_OK once open, RESULT_FAILED if the secret doesn't open it (nothing is changed) and
+// RESULT_INVALID if it isn't 32 bytes. There is no way to change the secret: reset the profile and
+// set it up again.
+message ProfileSecret {
+    bytes secret = 1;
+}
+
+// Erases the profile's FIDO credentials and OpenPGP card; a protected profile returns to
+// PROTECTED_NEW. The user confirms on the dongle first, so the Ack can take as long as that:
+// RESULT_ABORTED if declined or not confirmed in time.
+message ResetProfile {
+    Profile profile = 1;
+}
+
 // Firmware update: OtaBegin, then OtaData in order from offset 0, then OtaEnd. While an update
 // is running, input requests fail with RESULT_FAILED. An update is abandoned if the session ends,
 // on a CTRL abort, or with OtaAbort.
@@ -141,6 +175,7 @@ message Event {
         Config config = 30;
         DeviceInfo device_info = 31;
         Logs logs = 32;
+        Profiles profiles = 33;
     }
 }
 
@@ -150,7 +185,7 @@ message Hello {
     uint32 max_frame = 2;               // largest CMD frame payload the dongle accepts
     string firmware_version = 3;
     // Request families this firmware handles, e.g. "text", "strokes", "key_combo", "consumer",
-    // "keyboard_report", "config", "ota", "device_info", "logs".
+    // "keyboard_report", "config", "ota", "device_info", "logs", "profiles".
     repeated string capabilities = 4;
 }
 
@@ -225,4 +260,26 @@ message Logs {
     bytes data = 2;         // UTF-8 log text, may end inside a line
     uint32 next = 3;        // position after data: the `since` for the following request
     uint32 end = 4;         // position after the newest byte logged so far
+}
+
+enum Profile {
+    PROFILE_DEFAULT = 0;
+    PROFILE_PROTECTED = 1;
+}
+
+enum ProtectedState {
+    PROTECTED_UNKNOWN = 0;  // never read a missing value as PROTECTED_NEW
+    PROTECTED_NEW = 1;      // not set up: the next ProfileSecret sets it up
+    PROTECTED_WAITING = 2;  // set up, waiting for its secret
+    PROTECTED_OPEN = 3;
+}
+
+// Replies to GetProfiles and SelectProfile, and is also sent whenever any of it changes.
+message Profiles {
+    Profile active = 1;
+    Profile default_profile = 2;
+    ProtectedState protected_state = 3;
+    // Random, made when the protected profile is set up and replaced when it is reset; present
+    // while it is set up. Not secret: it tells the phone which of its secrets belongs here.
+    bytes protected_id = 4;
 }
