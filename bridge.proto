@@ -109,8 +109,8 @@ message GetLogs {
 // Security key profiles. Each profile has its own FIDO credentials and OpenPGP card. The protected
 // profile's are encrypted with a key that also depends on a 32-byte secret the phone generates and
 // keeps; the dongle holds the secret in RAM only, so it is needed again after every power-up. While
-// the active profile is protected and its secret hasn't arrived, the OpenPGP card is absent and
-// FIDO requests fail.
+// the active profile is protected and its secret hasn't arrived, the OpenPGP card answers no
+// commands and FIDO requests fail (except what a security key reset needs).
 //
 // Replied to with a Profiles event.
 message GetProfiles {}
