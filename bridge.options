@@ -23,6 +23,6 @@ bridge.Security.signer              max_size:32
 bridge.Security.download_mode       max_size:12
 bridge.Logs.data                    max_size:900
 bridge.ProfileSecret.secret         max_size:32
-bridge.Profiles.protected_id        max_size:16
+bridge.Profiles.phone_locked_id     max_size:16
 bridge.Request.msg                  anonymous_oneof:true
 bridge.Event.msg                    anonymous_oneof:true
