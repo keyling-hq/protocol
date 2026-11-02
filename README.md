@@ -29,4 +29,4 @@ The submodule pins the exact protocol commit each project was built against.
 ## License
 
 MIT, see `LICENSE`. Clients for any password manager or app, open or closed source, may implement
-this protocol. The firmware and Android app are GPL-2.0-or-later.
+this protocol. The firmware and Android app are GPL-3.0-only.
