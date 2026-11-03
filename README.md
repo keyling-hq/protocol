@@ -5,6 +5,7 @@ contract: its comments describe the GATT service, framing, flow control, abort a
 
 - `bridge.proto`: the schema (proto3).
 - `bridge.options`: nanopb size limits, used by the firmware's C code generation.
+- `design/tokens.json`: the shared look (see below).
 
 ## Using it
 
@@ -25,6 +26,18 @@ The submodule pins the exact protocol commit each project was built against.
   `Hello.capabilities` before using a request family.
 - `oneof` field numbers are grouped: 1-9 core, 10-29 input, 30-49 system, 50+ on-device apps.
 - `Hello.protocol_version` changes only for incompatible changes to framing or flow control.
+
+## Design tokens
+
+`design/tokens.json` holds the values the dongle's Candy theme and the hub app share, so both
+look like one product: the palette, the color of each on-device app (by the app id the dongle
+reports), the status LED's colors, corner radii and the fonts. It uses the
+[Design Tokens Format](https://www.designtokens.org/) (`$value`, `$type`; colors as sRGB hex),
+which tools such as Style Dictionary read.
+
+Projects generate their constants from it rather than copying values: the firmware's
+`tools/gen_tokens.py` writes C headers, and its CI fails when they are out of date. Tokens are
+only added or changed together with both users; a renamed or removed token breaks their builds.
 
 ## License
 
